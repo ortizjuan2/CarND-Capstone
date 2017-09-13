@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find styx)/launch/server.launch"/>
+
+    <!--Waypoint Loader -->
+    <include file="$(find waypoint_loader)/launch/waypoint_loader.launch"/>
+
+    <!--Waypoint Updater Node -->
+    <include file="$(find waypoint_updater)/launch/waypoint_updater.launch"/>
+
+    <!--Waypoint Follower Node -->
+    <include file="$(find waypoint_follower)/launch/pure_pursuit.launch"/>
+
+
+    <!--DBW Node -->
+    <include file="$(find twist_controller)/launch/dbw_sim.launch"/>
+
+</launch>

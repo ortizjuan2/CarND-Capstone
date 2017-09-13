@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="linear_interpolate_mode" default="True"/>
+    <node pkg="waypoint_follower" type="pure_pursuit" name="pure_pursuit" output="log">
+		<param name="linear_interpolate_mode" value="$(arg linear_interpolate_mode)"/>
+    </node>
+</launch>

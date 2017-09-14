@@ -6,12 +6,12 @@ from math import atan2, pi
 import pid
 import lowpass
 import tf
-from yaw_controller import YawController
+import rospy
+#from yaw_controller import YawController
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 DT = 0.025
-MAX_SPEED = 22.0
 MAX_STEER = 0.4363
 
 class Controller(object):
@@ -28,7 +28,8 @@ class Controller(object):
         steer_ratio = rospy.get_param('~steer_ratio')
         max_lat_accel = rospy.get_param('~max_lat_accel')
         max_steer_angle = rospy.get_param('~max_steer_angle')
-        self.yawController = YawController(wheel_base, steer_ratio, 5, max_lat_accel, max_steer_angle)
+        #self.yawController = YawController(wheel_base, steer_ratio, 5, max_lat_accel, max_steer_angle)
+
 
     def control(self, twist_cmd, current_velocity, pose, dbw_is_enabled):
         # TODO: Change the arg, kwarg list to suit your needs
@@ -64,6 +65,12 @@ class Controller(object):
         brake = 0
         e = twist_cmd.twist.linear.x - current_velocity.twist.linear.x
         v = self._pid_v.step(e, DT)
+
+        if abs(v) > 1.0:
+            if v > 0: v = 1.0
+            else: v = -1.0
+
+
         v = self._filt_v.filt(v)
 
         if v < 0:

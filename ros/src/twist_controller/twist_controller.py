@@ -7,7 +7,7 @@ import pid
 import lowpass
 import tf
 import rospy
-#from yaw_controller import YawController
+from yaw_controller import YawController
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
@@ -18,8 +18,10 @@ class Controller(object):
     def __init__(self):
         # TODO: Implement
         self.prev_linear_velocity = 0
-        self.p_v = [1.007781147890, 0.00387903801, 0.0047809619]
-        self.p_s = [0.002301151, 0.000001716, 0.005933]
+        self.prev_steer = 0
+        #self.p_v = [1.007781147890, 0.00387903801, 0.0047809619]
+        self.p_v = [1.187355162, 0.044831144, 0.00295747]
+        self.p_s = [0.0023011, 0.0000017, 0.005933]
         self._pid_v = pid.PID(self.p_v[0], self.p_v[1], self.p_v[2])
         self._pid_steer = pid.PID(self.p_s[0], self.p_s[1], self.p_s[2])
         self._filt_v = lowpass.LowPassFilter(.8, .2)
@@ -28,7 +30,7 @@ class Controller(object):
         steer_ratio = rospy.get_param('~steer_ratio')
         max_lat_accel = rospy.get_param('~max_lat_accel')
         max_steer_angle = rospy.get_param('~max_steer_angle')
-        #self.yawController = YawController(wheel_base, steer_ratio, 5, max_lat_accel, max_steer_angle)
+        self.yawController = YawController(wheel_base, steer_ratio, 1.0, max_lat_accel, max_steer_angle)
 
 
     def control(self, twist_cmd, current_velocity, pose, dbw_is_enabled):
@@ -82,15 +84,30 @@ class Controller(object):
         # steer = self._pid_steer.step(e, DT)
         # steer = self._filt_s.filt(steer)
 
-        # steer = self.yawController.get_steering(twist_cmd.twist.linear.x,
-        #                         current_velocity.twist.angular.z,
-        #                         current_velocity.twist.linear.x)
+        steer = self.yawController.get_steering(twist_cmd.twist.linear.x,
+                                  twist_cmd.twist.angular.z,
+                                  current_velocity.twist.linear.x)
+        #
+        # e = steer_desired - self.prev_steer
+        # u = self._pid_steer.step(e, 0.025)
+        # steer = self._filt_s.filt(u)
+        # self.prev_steer = steer
+        #
+
+        # steer_current = self.yawController.get_steering(current_velocity.twist.linear.x,
+        #                          current_velocity.twist.angular.z,
+        #                          current_velocity.twist.linear.x)
+        #
+        # e = steer_desired - steer_current
+        # u = self._pid_steer.step(e, 0.025)
+        # steer = self._filt_s.filt(u)
+
         #
         # eyaw = twist_cmd.twist.angular.z - steer
         # steer = self._pid_steer.step(eyaw, DT)
         # steer = self._filt_s.filt(steer)
 
-        steer = self._filt_s.filt(twist_cmd.twist.angular.z)
+        #steer = self._filt_s.filt(twist_cmd.twist.angular.z)
 
 
         return v, brake, steer

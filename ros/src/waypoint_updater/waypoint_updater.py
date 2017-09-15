@@ -47,7 +47,7 @@ class WaypointUpdater(object):
         self.pose_set = False
         self.waypoints_set = False
         self.ref_vel = 1e-3
-        self.MAX_SPEED = 10 * 0.44704
+        self.MAX_SPEED = 20 * 0.44704
         self.MAX_ACCEL = 0.1
 
         ### TESTING

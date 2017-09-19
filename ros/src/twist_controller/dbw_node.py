@@ -115,9 +115,26 @@ class DBWNode(object):
     def pose_cb(self, msg):
         # TODO: Implement
         #pass
-        self.pose = msg.pose
+        self.pose = msg
         self.pose_set = True
 
+        '''
+        [geometry_msgs/PoseStamped]:
+        std_msgs/Header header
+          uint32 seq
+          time stamp
+          string frame_id
+        geometry_msgs/Pose pose
+          geometry_msgs/Point position
+            float64 x
+            float64 y
+            float64 z
+          geometry_msgs/Quaternion orientation
+            float64 x
+            float64 y
+            float64 z
+            float64 w
+        '''
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
         while not rospy.is_shutdown():

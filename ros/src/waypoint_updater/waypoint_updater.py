@@ -40,6 +40,8 @@ class WaypointUpdater(object):
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
+        self.tflistener = tf.TransformListener()
+
         # TODO: Add other member variables you need below
         self.next_wp = None
         self.pose = None
@@ -47,7 +49,7 @@ class WaypointUpdater(object):
         self.pose_set = False
         self.waypoints_set = False
         self.ref_vel = 1e-3
-        self.MAX_SPEED = 20 * 0.44704
+        self.MAX_SPEED = 22 * 0.44704
         self.MAX_ACCEL = 0.1
 
         ### TESTING
@@ -63,7 +65,7 @@ class WaypointUpdater(object):
     def pose_cb(self, msg):
         # TODO: Implement
         #pass
-        self.pose = msg.pose
+        self.pose = msg
         self.pose_set = True
 
 
@@ -127,16 +129,20 @@ class WaypointUpdater(object):
 
 
     def get_next_wp(self):
+
         quaternion = (
-        self.pose.orientation.x,
-        self.pose.orientation.y,
-        self.pose.orientation.z,
-        self.pose.orientation.w)
+        self.pose.pose.orientation.x,
+        self.pose.pose.orientation.y,
+        self.pose.pose.orientation.z,
+        self.pose.pose.orientation.w)
         euler = tf.transformations.euler_from_quaternion(quaternion)
         roll = euler[0]
         pitch = euler[1]
         yaw = euler[2]
-        next_wp = self.NextWaypoint(self.pose.position.x, self.pose.position.y, yaw, self.waypoints)
+
+        # if yaw < 0 :
+        #     yaw = yaw + 2 * np.pi
+        next_wp = self.NextWaypoint(self.pose.pose.position.x, self.pose.pose.position.y, yaw, self.waypoints)
         '''
         p = Waypoint()
         p.pose.pose.position.x = float(wp['x'])
@@ -149,8 +155,9 @@ class WaypointUpdater(object):
         TODO: define waypoints
         '''
         ## set car current position
-        posx = self.pose.position.x
-        posy = self.pose.position.y
+        posx = self.pose.pose.position.x
+        posy = self.pose.pose.position.y
+        posz = self.pose.pose.position.z
 
         xc = []
         yc = []
@@ -173,6 +180,18 @@ class WaypointUpdater(object):
             yc.append(self.waypoints[i].pose.pose.position.y)
 
         ## convert to car frame
+
+
+        # try:
+        #     (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
+        #     print("transform: "),
+        #     print(trans)
+        #     print("rotation: "),
+        #     print(rot)
+        #     #yaw = atan2(trans[1], trans[0])
+        # except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        #     pass
+
         for i in range(len(xc)):
             shiftx = xc[i] - posx
             shifty = yc[i] - posy
@@ -211,13 +230,18 @@ class WaypointUpdater(object):
             ypoint += posy
             nextx.append(xpoint)
             nexty.append(ypoint)
+            # make one waypoint
             p = Waypoint()
             p.pose.pose.position.x = float(xpoint)
             p.pose.pose.position.y = float(ypoint)
             p.pose.pose.position.z = float(0.0)
             newyaw = math.atan2(ypoint - prevy, xpoint - prevx)
+            if newyaw < 0:
+                newyaw = newyaw + 2 * np.pi
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, newyaw)
             p.pose.pose.orientation = Quaternion(*q)
+            p.pose.header.frame_id = "/world"
+            p.twist.header.frame_id = '/world'
             #newvel = np.sqrt((prevx - xpoint)**2 + (prevy - ypoint)**2)/dt
             #p.twist.twist.linear.x = float(newvel)
             p.twist.twist.linear.x = float(self.ref_vel)
@@ -234,6 +258,45 @@ class WaypointUpdater(object):
 
 
         return waypoints
+
+'''
+[styx_msgs/Lane]:
+std_msgs/Header header
+  uint32 seq
+  time stamp
+  string frame_id
+styx_msgs/Waypoint[] waypoints
+  geometry_msgs/PoseStamped pose
+    std_msgs/Header header
+      uint32 seq
+      time stamp
+      string frame_id
+    geometry_msgs/Pose pose
+      geometry_msgs/Point position
+        float64 x
+        float64 y
+        float64 z
+      geometry_msgs/Quaternion orientation
+        float64 x
+        float64 y
+        float64 z
+        float64 w
+  geometry_msgs/TwistStamped twist
+    std_msgs/Header header
+      uint32 seq
+      time stamp
+      string frame_id
+    geometry_msgs/Twist twist
+      geometry_msgs/Vector3 linear
+        float64 x
+        float64 y
+        float64 z
+      geometry_msgs/Vector3 angular
+        float64 x
+        float64 y
+        float64 z
+
+'''
 
 
 

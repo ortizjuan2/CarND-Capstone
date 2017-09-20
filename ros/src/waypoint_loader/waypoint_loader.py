@@ -46,6 +46,7 @@ class WaypointLoader(object):
             reader = csv.DictReader(wfile, CSV_HEADER)
             for wp in reader:
                 p = Waypoint()
+		p.pose.header.frame_id ='/world'
                 p.pose.pose.position.x = float(wp['x'])
                 p.pose.pose.position.y = float(wp['y'])
                 p.pose.pose.position.z = float(wp['z'])

@@ -136,8 +136,8 @@ class WaypointUpdater(object):
         self.pose.pose.orientation.z,
         self.pose.pose.orientation.w)
         euler = tf.transformations.euler_from_quaternion(quaternion)
-        roll = euler[0]
-        pitch = euler[1]
+        # roll = euler[0]
+        # pitch = euler[1]
         yaw = euler[2]
 
         # if yaw < 0 :
@@ -155,15 +155,18 @@ class WaypointUpdater(object):
         TODO: define waypoints
         '''
         ## set car current position
-        posx = self.pose.pose.position.x
-        posy = self.pose.pose.position.y
-        posz = self.pose.pose.position.z
-
         xc = []
         yc = []
+        zc = []
 
-        xc.append(posx)
-        yc.append(posy)
+
+        try:
+            newPose = self.tflistener.transformPose('/base_link', self.pose)
+            xc.append(newPose.pose.position.x)
+            yc.append(newPose.pose.position.y)
+            zc.append(newPose.pose.position.z)
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            return []
 
         ## use next waypoints to fit polynomial
 
@@ -176,8 +179,13 @@ class WaypointUpdater(object):
             wp_end = 200
 
         for i in range(next_wp, wp_end):
-            xc.append(self.waypoints[i].pose.pose.position.x)
-            yc.append(self.waypoints[i].pose.pose.position.y)
+            try:
+                newPose = self.tflistener.transformPose('/base_link', self.waypoints[i].pose)
+                xc.append(newPose.pose.position.x)
+                yc.append(newPose.pose.position.y)
+                zc.append(newPose.pose.position.z)
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                return []
 
         ## convert to car frame
 
@@ -192,13 +200,13 @@ class WaypointUpdater(object):
         # except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         #     pass
 
-        for i in range(len(xc)):
-            shiftx = xc[i] - posx
-            shifty = yc[i] - posy
-            xc[i] = shiftx * np.cos(0 - yaw) - shifty * np.sin(0 - yaw)
-            yc[i] = shiftx * np.sin(0 - yaw) + shifty * np.cos(0 - yaw)
-
-        ## fit 5th order polynomial
+        # for i in range(len(xc)):
+        #     shiftx = xc[i] - posx
+        #     shifty = yc[i] - posy
+        #     xc[i] = shiftx * np.cos(0 - yaw) - shifty * np.sin(0 - yaw)
+        #     yc[i] = shiftx * np.sin(0 - yaw) + shifty * np.cos(0 - yaw)
+        #
+        # ## fit 5th order polynomial
         fit = np.polyfit(xc,yc, 5)
         fy = np.poly1d(fit)
 
@@ -212,6 +220,8 @@ class WaypointUpdater(object):
         nextx = []
         nexty = []
         waypoints = []
+        posx = self.pose.pose.position.x
+        posy = self.pose.pose.position.y
         prevx = posx
         prevy = posy
         dt = 0.025
@@ -236,8 +246,8 @@ class WaypointUpdater(object):
             p.pose.pose.position.y = float(ypoint)
             p.pose.pose.position.z = float(0.0)
             newyaw = math.atan2(ypoint - prevy, xpoint - prevx)
-            if newyaw < 0:
-                newyaw = newyaw + 2 * np.pi
+            # if newyaw < 0:
+            #     newyaw = newyaw + 2 * np.pi
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, newyaw)
             p.pose.pose.orientation = Quaternion(*q)
             p.pose.header.frame_id = "/world"

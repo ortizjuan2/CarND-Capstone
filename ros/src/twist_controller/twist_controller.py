@@ -24,8 +24,8 @@ class Controller(object):
         self.p_s = [0.0023011, 0.0000017, 0.005933]
         self._pid_v = pid.PID(self.p_v[0], self.p_v[1], self.p_v[2])
         self._pid_steer = pid.PID(self.p_s[0], self.p_s[1], self.p_s[2])
-        self._filt_v = lowpass.LowPassFilter(.8, .2)
-        self._filt_s = lowpass.LowPassFilter(.8, .3)
+        self._filt_v = lowpass.LowPassFilter(.8, 1.)
+        self._filt_s = lowpass.LowPassFilter(.8, 1.)
         wheel_base = rospy.get_param('~wheel_base')
         steer_ratio = rospy.get_param('~steer_ratio')
         max_lat_accel = rospy.get_param('~max_lat_accel')
@@ -37,31 +37,20 @@ class Controller(object):
     def control(self, twist_cmd, current_velocity, pose, dbw_is_enabled):
         # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
-        print("-------------")
-        try:
-            (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
-            newPose = self.tflistener.transformPose('/base_link', pose)
-            #print("transform: "),
-            #print(trans)
-            #print("rotation: "),
-            #print(rot)
-            #yaw = atan2(trans[1], trans[0])
-            print("new poase: %4.6f, %4.6f, %4.6f," % (newPose.pose.position.x,
-                                            newPose.pose.position.y,
-                                            newPose.pose.position.z))
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            pass
-
-        quaternion = (
-        pose.pose.orientation.x,
-        pose.pose.orientation.y,
-        pose.pose.orientation.z,
-        pose.pose.orientation.w)
-        euler = tf.transformations.euler_from_quaternion(quaternion)
-            #roll = euler[0]
-            #pitch = euler[1]
-        yaw = euler[2]
-
+        # print("-------------")
+        # try:
+        #     (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
+        #     newPose = self.tflistener.transformPose('/base_link', pose)
+        #     #print("transform: "),
+        #     #print(trans)
+        #     #print("rotation: "),
+        #     #print(rot)
+        #     #yaw = atan2(trans[1], trans[0])
+        #     print("new poase: %4.6f, %4.6f, %4.6f," % (newPose.pose.position.x,
+        #                                     newPose.pose.position.y,
+        #                                     newPose.pose.position.z))
+        # except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        #     pass
 
         # try:
         #     (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
@@ -72,7 +61,7 @@ class Controller(object):
         # except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         #     pass
 
-        print("pose: [%2.5f, %2.5f, %2.5f]\n" % (pose.pose.position.x, pose.pose.position.y, yaw))
+        #print("pose: [%2.5f, %2.5f, %2.5f]\n" % (pose.pose.position.x, pose.pose.position.y, yaw))
 
 
         '''
@@ -131,54 +120,60 @@ class Controller(object):
         #         brake = twist_cmd.twist.linear.x
         #     self.prev_linear_velocity = brake
 
-        v = 0
-        brake = 0
-        e = twist_cmd.twist.linear.x - current_velocity.twist.linear.x
-        v = self._pid_v.step(e, DT)
+        v = brake = steer = 0
+        if dbw_is_enabled == True:
 
-        if abs(v) > 1.0:
-            if v > 0: v = 1.0
-            else: v = -1.0
+            e = twist_cmd.twist.linear.x - current_velocity.twist.linear.x
+            v = self._pid_v.step(e, DT)
 
-
-        v = self._filt_v.filt(v)
-
-        if v < 0:
-            brake = abs(v)
-            v = 0
+            if abs(v) > 1.0:
+                if v > 0: v = 1.0
+                else: v = -1.0
 
 
-        # e = twist_cmd.twist.angular.z - current_velocity.twist.angular.z
-        # steer = self._pid_steer.step(e, DT)
-        # steer = self._filt_s.filt(steer)
+            v = self._filt_v.filt(v)
 
-        steer = self.yawController.get_steering(current_velocity.twist.linear.x,
-                                  twist_cmd.twist.angular.z,
-                                  current_velocity.twist.linear.x)
+            if v < 0:
+                brake = abs(v)
+                v = 0
 
-        steer = self._filt_s.filt(steer)
-        #
-        # e = steer_desired - self.prev_steer
-        # u = self._pid_steer.step(e, 0.025)
-        # steer = self._filt_s.filt(u)
-        # self.prev_steer = steer
-        #
 
-        # steer_current = self.yawController.get_steering(current_velocity.twist.linear.x,
-        #                          current_velocity.twist.angular.z,
-        #                          current_velocity.twist.linear.x)
-        #
-        # e = steer_desired - steer_current
-        # u = self._pid_steer.step(e, 0.025)
-        # steer = self._filt_s.filt(u)
+            # e = twist_cmd.twist.angular.z - current_velocity.twist.angular.z
+            # steer = self._pid_steer.step(e, DT)
+            # steer = self._filt_s.filt(steer)
 
-        #
-        # eyaw = twist_cmd.twist.angular.z - steer
-        # steer = self._pid_steer.step(eyaw, DT)
-        # steer = self._filt_s.filt(steer)
+            steer = self.yawController.get_steering(current_velocity.twist.linear.x,
+                                      twist_cmd.twist.angular.z,
+                                      current_velocity.twist.linear.x)
 
-        #steer = self._filt_s.filt(twist_cmd.twist.angular.z)
-        #throttle: 0.0000 brake: 0.0000 steer: 0.0000
+            steer = self._filt_s.filt(steer)
+            #
+            # e = steer_desired - self.prev_steer
+            # u = self._pid_steer.step(e, 0.025)
+            # steer = self._filt_s.filt(u)
+            # self.prev_steer = steer
+            #
+
+            # steer_current = self.yawController.get_steering(current_velocity.twist.linear.x,
+            #                          current_velocity.twist.angular.z,
+            #                          current_velocity.twist.linear.x)
+            #
+            # e = steer_desired - steer_current
+            # u = self._pid_steer.step(e, 0.025)
+            # steer = self._filt_s.filt(u)
+
+            #
+            # eyaw = twist_cmd.twist.angular.z - steer
+            # steer = self._pid_steer.step(eyaw, DT)
+            # steer = self._filt_s.filt(steer)
+
+            #steer = self._filt_s.filt(twist_cmd.twist.angular.z)
+            #throttle: 0.0000 brake: 0.0000 steer: 0.0000
+        else:
+            self._pid_steer.reset()
+            self._pid_v.reset()
+            self._filt_s.reset()
+            self._filt_v.reset()
 
         return v, brake, steer
 

@@ -175,7 +175,7 @@ class WaypointUpdater(object):
         if wp_end >= len(self.waypoints):
             wp_end = len(self.waypoints)
             more_wps = 200 - (wp_end - next_wp)
-            rospy.logwarm("more waypoints needed %d" % (more_wps))
+            rospy.loginfo("more waypoints needed %d" % (more_wps))
         elif next_wp == wp_end:
             next_wp = 0
             wp_end = 200
@@ -264,15 +264,15 @@ class WaypointUpdater(object):
             ypoint += posy
 
 
-            rospy.loginfo("old pose: %3.4f, %3.4f, %3.4f" % (xpoint,
-                                            ypoint,
-                                            yaw))
-
-
-
-            rospy.loginfo("new pose: %3.4f, %3.4f, %3.4f" % (newPose.pose.position.x,
-                                            newPose.pose.position.y,
-                                            newPose.pose.orientation.z))
+            # rospy.loginfo("old pose: %3.4f, %3.4f, %3.4f" % (xpoint,
+            #                                 ypoint,
+            #                                 yaw))
+            #
+            #
+            #
+            # rospy.loginfo("new pose: %3.4f, %3.4f, %3.4f" % (newPose.pose.position.x,
+            #                                 newPose.pose.position.y,
+            #                                 newPose.pose.orientation.z))
             '''
             [INFO] [1505965263.675728]: old pose: 1232.3648, 1188.3714, 0.0429
             [INFO] [1505965263.676147]: new pose: 62.6939, -0.2726, -0.0043

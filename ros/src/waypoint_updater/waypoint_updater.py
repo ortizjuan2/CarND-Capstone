@@ -49,7 +49,7 @@ class WaypointUpdater(object):
         self.pose_set = False
         self.waypoints_set = False
         self.ref_vel = 1e-3
-        self.MAX_SPEED = 22 * 0.44704
+        self.MAX_SPEED = 30 * 0.44704
         self.MAX_ACCEL = 0.1
 
         ### TESTING
@@ -246,8 +246,8 @@ class WaypointUpdater(object):
             p.pose.pose.position.y = float(ypoint)
             p.pose.pose.position.z = float(0.0)
             newyaw = math.atan2(ypoint - prevy, xpoint - prevx)
-            # if newyaw < 0:
-            #     newyaw = newyaw + 2 * np.pi
+            if newyaw < 0:
+                newyaw = newyaw + 2 * np.pi
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, newyaw)
             p.pose.pose.orientation = Quaternion(*q)
             p.pose.header.frame_id = "/world"

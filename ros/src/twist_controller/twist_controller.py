@@ -38,19 +38,21 @@ class Controller(object):
         # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
         # print("-------------")
-        # try:
-        #     (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
-        #     newPose = self.tflistener.transformPose('/base_link', pose)
-        #     #print("transform: "),
-        #     #print(trans)
-        #     #print("rotation: "),
-        #     #print(rot)
-        #     #yaw = atan2(trans[1], trans[0])
-        #     print("new poase: %4.6f, %4.6f, %4.6f," % (newPose.pose.position.x,
-        #                                     newPose.pose.position.y,
-        #                                     newPose.pose.position.z))
-        # except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        #     pass
+        try:
+            (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
+            newPose = self.tflistener.transformPose('/base_link', pose)
+            #print("transform: "),
+            #print(trans)
+            #print("rotation: "),
+            #print(rot)
+            yaw = atan2(trans[1], trans[0])
+            print("pose: [%2.5f, %2.5f, %2.5f]" % (pose.pose.position.x, pose.pose.position.y, yaw))
+            #print("new poase: %4.6f, %4.6f, %4.6f," % (newPose.pose.position.x,
+            #                                newPose.pose.position.y,
+            #                                newPose.pose.position.z))
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            rospy.loginfo("error with tflistener")
+            pass
 
         # try:
         #     (trans,rot) = self.tflistener.lookupTransform('/base_link', '/world', rospy.Time(0))
@@ -61,7 +63,7 @@ class Controller(object):
         # except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         #     pass
 
-        #print("pose: [%2.5f, %2.5f, %2.5f]\n" % (pose.pose.position.x, pose.pose.position.y, yaw))
+
 
 
         '''

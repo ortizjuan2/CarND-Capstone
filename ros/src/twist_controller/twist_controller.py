@@ -144,10 +144,12 @@ class Controller(object):
             # steer = self._pid_steer.step(e, DT)
             # steer = self._filt_s.filt(steer)
 
-            steer = self.yawController.get_steering(current_velocity.twist.linear.x,
+            # steer = self.yawController.get_steering(current_velocity.twist.linear.x,
+            #                           twist_cmd.twist.angular.z,
+            #                           current_velocity.twist.linear.x)
+            steer = self.yawController.get_steering(twist_cmd.twist.linear.x,
                                       twist_cmd.twist.angular.z,
                                       current_velocity.twist.linear.x)
-
             steer = self._filt_s.filt(steer)
             #
             # e = steer_desired - self.prev_steer

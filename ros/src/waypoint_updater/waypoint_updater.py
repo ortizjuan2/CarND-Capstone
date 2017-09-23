@@ -143,6 +143,16 @@ class WaypointUpdater(object):
         # if yaw < 0 :
         #     yaw = yaw + 2 * np.pi
         next_wp = self.NextWaypoint(self.pose.pose.position.x, self.pose.pose.position.y, yaw, self.waypoints)
+        dst = self.euclidean_distance(self.pose.pose.position.x, self.pose.pose.position.y,
+                                self.waypoints[next_wp].pose.pose.position.x, self.waypoints[next_wp].pose.pose.position.y)
+
+        while dst < 1.0:
+            rospy.loginfo("not enough distance: %f" % dst)
+            next_wp += 1
+            dst = self.euclidean_distance(self.pose.pose.position.x, self.pose.pose.position.y,
+                                    self.waypoints[next_wp].pose.pose.position.x, self.waypoints[next_wp].pose.pose.position.y)
+
+
         '''
         p = Waypoint()
         p.pose.pose.position.x = float(wp['x'])
@@ -214,7 +224,7 @@ class WaypointUpdater(object):
         waypoints = []
         prevx = posx
         prevy = posy
-        dt = 0.025
+        dt = 0.02
 
         for j in range(LOOKAHEAD_WPS):
             N = targetdist / (dt * self.ref_vel)
@@ -236,8 +246,8 @@ class WaypointUpdater(object):
             p.pose.pose.position.y = float(ypoint)
             p.pose.pose.position.z = float(0.0)
             newyaw = math.atan2(ypoint - prevy, xpoint - prevx)
-            if newyaw < 0:
-                newyaw = newyaw + 2 * np.pi
+            # if newyaw < 0:
+            #     newyaw = newyaw + 2 * np.pi
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, newyaw)
             p.pose.pose.orientation = Quaternion(*q)
             p.pose.header.frame_id = "/world"
@@ -245,6 +255,8 @@ class WaypointUpdater(object):
             #newvel = np.sqrt((prevx - xpoint)**2 + (prevy - ypoint)**2)/dt
             #p.twist.twist.linear.x = float(newvel)
             p.twist.twist.linear.x = float(self.ref_vel)
+            p.twist.twist.angular.z = newyaw
+
             waypoints.append(p)
 
             prevx = xpoint

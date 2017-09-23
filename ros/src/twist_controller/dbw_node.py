@@ -102,7 +102,8 @@ class DBWNode(object):
         '''
 
     def dbw_enabled_cb(self, msg):
-        self.dbw_is_enabled = msg
+        self.dbw_is_enabled = msg.data
+        rospy.loginfo("dbw enabled: %s" % msg.data)
 
     def current_velocity_cb(self, msg):
         self.current_velocity = msg
@@ -155,21 +156,21 @@ class DBWNode(object):
                 # else:
                 #     print("manual mode !!!\n")
                 #
-                if self.dbw_is_enabled:
-                    print("twist linear: [%2.4f, %2.4f, %2.4f]\n" %(self.twist_cmd.twist.linear.x,
-                                                                self.twist_cmd.twist.linear.y,
-                                                                self.twist_cmd.twist.linear.z))
-                    print("twist angular: [%2.4f, %2.4f, %2.4f]\n" %(self.twist_cmd.twist.angular.x,
-                                                                self.twist_cmd.twist.angular.y,
-                                                                self.twist_cmd.twist.angular.z))
-                    print("velocity linear: [%2.4f, %2.4f, %2.4f]\n" %(self.current_velocity.twist.linear.x,
-                                                                self.current_velocity.twist.linear.y,
-                                                                self.current_velocity.twist.linear.z))
-                    print("velocity angular: [%2.4f, %2.4f, %2.4f]\n" %(self.current_velocity.twist.angular.x,
-                                                                self.current_velocity.twist.angular.y,
-                                                                self.current_velocity.twist.angular.z))
-
-                    print("throttle: %2.4f brake: %2.4f steer: %2.4f\n" % (throttle, brake, steering))
+                if self.dbw_is_enabled == True:
+                    # print("twist linear: [%2.4f, %2.4f, %2.4f]\n" %(self.twist_cmd.twist.linear.x,
+                    #                                             self.twist_cmd.twist.linear.y,
+                    #                                             self.twist_cmd.twist.linear.z))
+                    # print("twist angular: [%2.4f, %2.4f, %2.4f]\n" %(self.twist_cmd.twist.angular.x,
+                    #                                             self.twist_cmd.twist.angular.y,
+                    #                                             self.twist_cmd.twist.angular.z))
+                    # print("velocity linear: [%2.4f, %2.4f, %2.4f]\n" %(self.current_velocity.twist.linear.x,
+                    #                                             self.current_velocity.twist.linear.y,
+                    #                                             self.current_velocity.twist.linear.z))
+                    # print("velocity angular: [%2.4f, %2.4f, %2.4f]\n" %(self.current_velocity.twist.angular.x,
+                    #                                             self.current_velocity.twist.angular.y,
+                    #                                             self.current_velocity.twist.angular.z))
+                    #
+                    # print("throttle: %2.4f brake: %2.4f steer: %2.4f\n" % (throttle, brake, steering))
                     self.publish(throttle, brake, steering)
                     #self.publish(0.3, 0.0, 0.0)
             rate.sleep()

@@ -37,6 +37,10 @@ class DBWNode(object):
     def __init__(self):
         rospy.init_node('dbw_node')
 
+        self.prev_time = rospy.Time.now()
+        self.prev_time = self.prev_time.secs + self.prev_time.nsecs * 1e-9
+        self.dt = 0.02
+
         #self.dbw_is_enabled = False
         self.dbw_is_enabled = True
         self.current_velocity = None
@@ -112,6 +116,13 @@ class DBWNode(object):
     def twist_cmd_cb(self, msg):
         self.twist_cmd = msg
         self.twist_cmd_set = True
+        # cur_time = rospy.Time.now()
+        # cur_time = cur_time.secs + cur_time.nsecs * 1e-9
+        # dt =  cur_time - self.prev_time
+        # self.prev_time = cur_time
+        # if dt > 0. :
+        #     self.dt = dt
+            #rospy.loginfo('setting dt: %f' % dt)
 
     def pose_cb(self, msg):
         # TODO: Implement
@@ -150,7 +161,7 @@ class DBWNode(object):
                 throttle, brake, steering = self.controller.control(self.twist_cmd,
                                                                      self.current_velocity,
                                                                      self.pose,
-                                                                     self.dbw_is_enabled)
+                                                                     self.dbw_is_enabled, self.dt)
                 # if self.dbw_is_enabled:
                 #     print ("atomatic mode !!!\n")
                 # else:

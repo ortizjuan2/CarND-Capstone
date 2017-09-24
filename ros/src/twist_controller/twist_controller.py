@@ -34,7 +34,7 @@ class Controller(object):
         self.tflistener = tf.TransformListener()
 
 
-    def control(self, twist_cmd, current_velocity, pose, dbw_is_enabled):
+    def control(self, twist_cmd, current_velocity, pose, dbw_is_enabled, dt):
         # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
         # print("-------------")
@@ -136,7 +136,7 @@ class Controller(object):
             v = 0
             brake = 0
             e = twist_cmd.twist.linear.x - current_velocity.twist.linear.x
-            v = self._pid_v.step(e, DT)
+            v = self._pid_v.step(e, dt)
 
             if abs(v) > 1.0:
                 if v > 0: v = 1.0
@@ -150,9 +150,9 @@ class Controller(object):
                 v = 0
 
 
-        # e = twist_cmd.twist.angular.z - current_velocity.twist.angular.z
-        # steer = self._pid_steer.step(e, DT)
+
         # steer = self._filt_s.filt(steer)
+
 
             steer = self.yawController.get_steering(twist_cmd.twist.linear.x,
                                       twist_cmd.twist.angular.z,

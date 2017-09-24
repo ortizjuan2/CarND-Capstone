@@ -30,6 +30,9 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 class WaypointUpdater(object):
     def __init__(self):
+
+
+
         rospy.init_node('waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
@@ -49,7 +52,7 @@ class WaypointUpdater(object):
         self.pose_set = False
         self.waypoints_set = False
         self.ref_vel = 1e-3
-        self.MAX_SPEED = 22 * 0.44704
+        self.MAX_SPEED = 20 * 0.44704
         self.MAX_ACCEL = 0.1
 
         ### TESTING
@@ -57,6 +60,9 @@ class WaypointUpdater(object):
         self.count_printed = 0
 
         ##
+        self.prev_time = rospy.Time.now()
+        self.prev_time = self.prev_time.secs + self.prev_time.nsecs * 1e-9
+        self.dt = 0.02
 
         self.publish()
 
@@ -69,11 +75,20 @@ class WaypointUpdater(object):
         self.pose_set = True
 
 
+
     def waypoints_cb(self, waypoints):
         # TODO: Implement
         #pass
         self.waypoints = waypoints.waypoints
         self.waypoints_set = True
+        #---
+        # cur_time = rospy.Time.now()
+        # cur_time = cur_time.secs + cur_time.nsecs * 1e-9
+        # dt =  cur_time - self.prev_time
+        # self.prev_time = cur_time
+        # if dt > 0. :
+        #     self.dt = dt
+        #     rospy.loginfo("dt set to: %f" % dt)
 
 
     def traffic_cb(self, msg):
@@ -143,15 +158,15 @@ class WaypointUpdater(object):
         # if yaw < 0 :
         #     yaw = yaw + 2 * np.pi
         next_wp = self.NextWaypoint(self.pose.pose.position.x, self.pose.pose.position.y, yaw, self.waypoints)
-        dst = self.euclidean_distance(self.pose.pose.position.x, self.pose.pose.position.y,
-                                self.waypoints[next_wp].pose.pose.position.x, self.waypoints[next_wp].pose.pose.position.y)
-
-        while dst < 1.0:
-            rospy.loginfo("not enough distance: %f" % dst)
-            next_wp += 1
-            dst = self.euclidean_distance(self.pose.pose.position.x, self.pose.pose.position.y,
-                                    self.waypoints[next_wp].pose.pose.position.x, self.waypoints[next_wp].pose.pose.position.y)
-
+        # dst = self.euclidean_distance(self.pose.pose.position.x, self.pose.pose.position.y,
+        #                         self.waypoints[next_wp].pose.pose.position.x, self.waypoints[next_wp].pose.pose.position.y)
+        #
+        # while dst < 1.0:
+        #     rospy.loginfo("not enough distance: %f" % dst)
+        #     next_wp += 1
+        #     dst = self.euclidean_distance(self.pose.pose.position.x, self.pose.pose.position.y,
+        #                             self.waypoints[next_wp].pose.pose.position.x, self.waypoints[next_wp].pose.pose.position.y)
+        #
 
         '''
         p = Waypoint()
@@ -171,9 +186,11 @@ class WaypointUpdater(object):
 
         xc = []
         yc = []
+        yw = []
 
         xc.append(posx)
         yc.append(posy)
+        yw.append(yaw)
 
         ## use next waypoints to fit polynomial
 
@@ -188,6 +205,11 @@ class WaypointUpdater(object):
         for i in range(next_wp, wp_end):
             xc.append(self.waypoints[i].pose.pose.position.x)
             yc.append(self.waypoints[i].pose.pose.position.y)
+            wyaw = tf.transformations.euler_from_quaternion([self.waypoints[i].pose.pose.orientation.x,
+                                                self.waypoints[i].pose.pose.orientation.y,
+                                                self.waypoints[i].pose.pose.orientation.z,
+                                                self.waypoints[i].pose.pose.orientation.w])[2]
+            yw.append(wyaw)
 
         ## convert to car frame
 
@@ -224,7 +246,9 @@ class WaypointUpdater(object):
         waypoints = []
         prevx = posx
         prevy = posy
-        dt = 0.02
+        prevyaw = yaw
+        #dt = 0.033
+        dt = self.dt
 
         for j in range(LOOKAHEAD_WPS):
             N = targetdist / (dt * self.ref_vel)
@@ -246,6 +270,7 @@ class WaypointUpdater(object):
             p.pose.pose.position.y = float(ypoint)
             p.pose.pose.position.z = float(0.0)
             newyaw = math.atan2(ypoint - prevy, xpoint - prevx)
+
             # if newyaw < 0:
             #     newyaw = newyaw + 2 * np.pi
             q = tf.transformations.quaternion_from_euler(0.0, 0.0, newyaw)
@@ -255,7 +280,9 @@ class WaypointUpdater(object):
             #newvel = np.sqrt((prevx - xpoint)**2 + (prevy - ypoint)**2)/dt
             #p.twist.twist.linear.x = float(newvel)
             p.twist.twist.linear.x = float(self.ref_vel)
-            p.twist.twist.angular.z = newyaw
+
+            p.twist.twist.angular.z = (newyaw - prevyaw) / dt
+            prevyaw = newyaw
 
             waypoints.append(p)
 
